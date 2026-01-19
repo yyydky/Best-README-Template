@@ -1,0 +1,4 @@
+fastmcp
+langchain
+langchain-aws
+langchain-mcp-adapters
