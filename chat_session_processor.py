@@ -168,16 +168,23 @@ def build_sessions(df: pd.DataFrame, turns: pd.DataFrame) -> pd.DataFrame:
     return sessions
 
 
-def write_outputs(output_dir: Path, turns: pd.DataFrame, sessions: pd.DataFrame) -> None:
+def write_outputs(
+    output_dir: Path,
+    turns: pd.DataFrame,
+    sessions: pd.DataFrame,
+    sorted_rows: pd.DataFrame,
+) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     turns_csv = output_dir / "turns.csv"
     turns_parquet = output_dir / "turns.parquet"
     sessions_csv = output_dir / "sessions.csv"
     sessions_parquet = output_dir / "sessions.parquet"
+    sorted_rows_csv = output_dir / "sorted_rows.csv"
 
     turns.to_csv(turns_csv, index=False)
     sessions.to_csv(sessions_csv, index=False)
+    sorted_rows.to_csv(sorted_rows_csv, index=False)
 
     turns.to_parquet(turns_parquet, index=False)
     sessions.to_parquet(sessions_parquet, index=False)
@@ -226,10 +233,25 @@ def main() -> None:
     df["answer_missing"] = df["answer_clean"].isna()
     df["answer_filled"] = df["answer_clean"].fillna(PLACEHOLDER_ANSWER)
 
+    sorted_rows = df.sort_values(
+        by=["session_id", "timestamp", "row_index"],
+        ascending=[True, True, True],
+        na_position="last",
+    )[
+        [
+            "session_id",
+            "timestamp",
+            "date",
+            "question",
+            "answer",
+            "row_index",
+        ]
+    ].reset_index(drop=True)
+
     turns = build_turns(df)
     sessions = build_sessions(df, turns)
 
-    write_outputs(args.output_dir, turns, sessions)
+    write_outputs(args.output_dir, turns, sessions, sorted_rows)
     print_summary(df, sessions)
 
 
